@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:senai@localhost:5432/saep?schema=public"
+}
+
+enum TipoVeiculo {
+  PASSEIO
+  UTILITARIO
+  MOTO
+}
+
+model Usuario {
+  id            Int            @id @default(autoincrement())
+  nome          String
+  email         String         @unique
+  senha         String
+  criadoEm      DateTime       @default(now())
+  movimentacaos Movimentacao[]
+
+  @@map("usuarios")
+}
+
+model Veiculo {
+  id                   Int            @id @default(autoincrement())
+  modelo               String
+  marca                String
+  cor                  String
+  tipo                 TipoVeiculo
+  capacidade           Int
+  valorLocacao         Float
+  quantidadeDisponivel Int            @default(0)
+  estoqueMinimo        Int            @default(1)
+  criadoEm             DateTime       @default(now())
+  atualizadoEm         DateTime       @updatedAt
+  locacaos             Locacao[]
+  movimentacaos        Movimentacao[]
+
+  @@map("veiculos")
+}
+
+// =============================================================================
+// A PARTIR DAQUI E COM VOCES
+// =============================================================================
+//
+// Os modelos abaixo estao apenas esbocados. Descomente, complete os campos e os
+// relacionamentos, depois rode:  npx prisma migrate dev --name movimentacoes
+//
+// Lembre-se do enunciado:
+//   - O banco precisa ter pelo menos 3 registros em TODAS as tabelas criadas,
+//     incluindo Veiculo, Locacao e Cliente (item 3.2). Popule no prisma/seed.ts.
+//   - Toda movimentacao registra QUEM fez e QUANDO (rastreabilidade).
+//   - Uma saida de veiculo precisa disparar o alerta de estoque minimo (item 7.1.4).
+//
+// 
+model Cliente {
+  id       Int       @id @default(autoincrement())
+  nome     String
+  cpf      String    @unique
+  telefone String
+  email    String    @unique
+  cnh      String
+  locacoes Locacao[]
+
+  @@map("clientes")
+}
+
+model Locacao {
+  id            Int       @id @default(autoincrement())
+  clienteId     Int
+  cliente       Cliente   @relation(fields: [clienteId], references: [id])
+  veiculoId     Int
+  veiculo       Veiculo   @relation(fields: [veiculoId], references: [id])
+  dataRetirada  DateTime  @default(now())
+  dataDevolucao DateTime?
+  valorTotal    Float
+
+  @@map("locacoes")
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+}
+
+model Movimentacao {
+  id               Int              @id @default(autoincrement())
+  veiculoId        Int
+  veiculo          Veiculo          @relation(fields: [veiculoId], references: [id])
+  tipo             TipoMovimentacao
+  usuarioId        Int
+  usuario          Usuario          @relation(fields: [usuarioId], references: [id])
+  dataMovimentacao DateTime         @default(now())
+
+  @@map("movimentacoes")
+}
